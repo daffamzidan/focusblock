@@ -18,10 +18,6 @@ $ sudo focusblock off
 focusblock: locked until 2026-11-13 12:17 (2h 00m left). Stay strong.
 ```
 
-## Why I built this
-
-I kept opening Netflix when I should have been working. Willpower wasn't enough, so I wanted the site to stop loading at all. It also had to lift on its own once I'd earned the break, without me remembering to undo anything. There was no app to install, account to make or browser extension that a private window could skip. It's one shell script and the tools macOS already has.
-
 ## Install
 
 ```bash
