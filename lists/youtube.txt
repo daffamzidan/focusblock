@@ -1,0 +1,9 @@
+# YouTube: website, mobile site, short links and player API
+youtube.com
+www.youtube.com
+m.youtube.com
+music.youtube.com
+youtu.be
+youtube-nocookie.com
+www.youtube-nocookie.com
+youtubei.googleapis.com

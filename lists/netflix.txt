@@ -1,0 +1,14 @@
+# Netflix: website, API and video/image CDNs
+netflix.com
+www.netflix.com
+api.netflix.com
+api-global.netflix.com
+secure.netflix.com
+netflix.net
+nflxext.com
+assets.nflxext.com
+codex.nflxext.com
+nflximg.com
+nflximg.net
+nflxvideo.net
+nflxso.net
