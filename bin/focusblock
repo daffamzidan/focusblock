@@ -330,7 +330,7 @@ cmd_lists() {
 
 usage() {
   cat <<'EOF'
-focusblock: block distracting sites on this Mac until you've done the work.
+focusblock: build your focus by keeping distracting sites closed for a work session.
 
 Usage:
   sudo focusblock on <site|list>... [--for DURATION]

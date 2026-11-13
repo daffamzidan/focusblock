@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/daffamzidan/focusblock/actions/workflows/ci.yml/badge.svg)](https://github.com/daffamzidan/focusblock/actions/workflows/ci.yml)
 
-Block distracting sites on your Mac until you've done the work. You can add a timer, and the block won't come off until the time is up.
+Build your focus, one session at a time. Decide what you'll work on and for how long, and focusblock keeps distracting sites closed until the session is done.
 
 ```console
 $ sudo focusblock on netflix youtube --for 2h
@@ -17,6 +17,14 @@ Locked until 2026-11-13 12:17 (2h 00m left)
 $ sudo focusblock off
 focusblock: locked until 2026-11-13 12:17 (2h 00m left). Stay strong.
 ```
+
+## Why I built this
+
+I believe focus is a skill you can train. Willpower grows the same way fitness does: set a clear goal, commit to it, and follow through, again and again. I wanted a tool that supports that habit and makes each focus session count.
+
+focusblock works as a commitment device. You make the decision once, at the start, while your goals are clear: "two hours on this project, no Netflix." From then on you spend that energy on the work instead of arguing with yourself. When the session ends, the block lifts by itself, and the break feels earned. Each session you finish is practice, so you can start with 25 minutes and build up to whole afternoons.
+
+I kept it simple on purpose. It's one shell script that uses tools macOS already has, with no app to install, no account and no browser extension.
 
 ## Install
 
@@ -60,7 +68,7 @@ flowchart LR
 
 ## Limits
 
-This tool adds friction. It doesn't make it impossible to get around:
+focusblock supports your commitment. It isn't a security lock, and a determined admin can get around it:
 
 - Anyone with your admin password can edit `/etc/hosts` by hand and remove the block. The timer only stops `focusblock off`. It can't stop someone with root access.
 - It only covers this Mac. Your phone, tablet and TV can still open the sites.
