@@ -286,7 +286,7 @@ cmd_on() {
 cmd_off() {
   if ! is_blocked; then info "Nothing is blocked."; return 0; fi
   if is_locked; then
-    die "locked until $(fmt_time "$(lock_until)") ($(fmt_left $(($(lock_until) - $(now)))) left). Stay strong."
+    die "locked until $(fmt_time "$(lock_until)") ($(fmt_left $(($(lock_until) - $(now)))) left). You can do it!"
   fi
   if [ "$DRY_RUN" = 1 ]; then
     info "Dry run: would remove the block for $(current_targets)."; return 0

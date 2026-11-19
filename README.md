@@ -15,7 +15,7 @@ Blocked: netflix, youtube (21 domains)
 Locked until 2026-11-13 12:17 (2h 00m left)
 
 $ sudo lockin off
-lockin: locked until 2026-11-13 12:17 (2h 00m left). Stay strong.
+lockin: locked until 2026-11-13 12:17 (2h 00m left). You can do it!
 ```
 
 ## Why I built this

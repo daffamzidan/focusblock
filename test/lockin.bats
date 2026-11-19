@@ -171,7 +171,7 @@ count() { grep -c "$1" "$LOCKIN_HOSTS" || true; }
   "$FB" on netflix --for 2h
   run "$FB" off
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Stay strong"* ]]
+  [[ "$output" == *"You can do it!"* ]]
   [ "$(count '^0\.0\.0\.0 netflix\.com$')" -eq 1 ]
 }
 
