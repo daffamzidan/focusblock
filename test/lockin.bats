@@ -5,22 +5,22 @@
 
 setup() {
   TMP="$(mktemp -d)"
-  export FOCUSBLOCK_HOSTS="$TMP/hosts"
-  export FOCUSBLOCK_STATE_DIR="$TMP/state"
-  export FOCUSBLOCK_LAUNCHD_DIR="$TMP/launchd"
-  export FOCUSBLOCK_NO_FLUSH=1
-  export FOCUSBLOCK_NO_LAUNCHD=1
-  export FOCUSBLOCK_NOW=1000000000
-  printf '127.0.0.1\tlocalhost\n255.255.255.255\tbroadcasthost\n::1             localhost\n\n' > "$FOCUSBLOCK_HOSTS"
-  cp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
-  FB="$BATS_TEST_DIRNAME/../bin/focusblock"
+  export LOCKIN_HOSTS="$TMP/hosts"
+  export LOCKIN_STATE_DIR="$TMP/state"
+  export LOCKIN_LAUNCHD_DIR="$TMP/launchd"
+  export LOCKIN_NO_FLUSH=1
+  export LOCKIN_NO_LAUNCHD=1
+  export LOCKIN_NOW=1000000000
+  printf '127.0.0.1\tlocalhost\n255.255.255.255\tbroadcasthost\n::1             localhost\n\n' > "$LOCKIN_HOSTS"
+  cp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
+  FB="$BATS_TEST_DIRNAME/../bin/lockin"
 }
 
 teardown() {
   rm -rf "$TMP"
 }
 
-count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
+count() { grep -c "$1" "$LOCKIN_HOSTS" || true; }
 
 # --- basics -----------------------------------------------------------------
 
@@ -37,7 +37,7 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
 
 @test "--version prints the version" {
   run "$FB" --version
-  [[ "$output" =~ ^focusblock\ [0-9]+\.[0-9]+\.[0-9]+$ ]]
+  [[ "$output" =~ ^lockin\ [0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
 
 @test "lists shows the built-in lists" {
@@ -60,22 +60,22 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
   "$FB" on netflix youtube
   run "$FB" off
   [ "$status" -eq 0 ]
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }
 
 @test "round trip also works when the file has no trailing blank line" {
-  printf '127.0.0.1 localhost' > "$FOCUSBLOCK_HOSTS"
+  printf '127.0.0.1 localhost' > "$LOCKIN_HOSTS"
   printf '127.0.0.1 localhost\n' > "$TMP/hosts.orig"
   "$FB" on netflix
   "$FB" off
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }
 
 @test "running on twice does not duplicate entries" {
   "$FB" on netflix
   "$FB" on netflix
   [ "$(count '^0\.0\.0\.0 netflix\.com$')" -eq 1 ]
-  [ "$(count 'FOCUSBLOCK-START')" -eq 1 ]
+  [ "$(count 'LOCKIN-START')" -eq 1 ]
 }
 
 @test "a second on adds to the existing block" {
@@ -103,7 +103,7 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
   run "$FB" on notalist
   [ "$status" -eq 1 ]
   [[ "$output" == *"unknown site or list"* ]]
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }
 
 @test "anything that isn't a hostname is rejected" {
@@ -111,7 +111,7 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
     run "$FB" on "$bad"
     [ "$status" -eq 1 ]
   done
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }
 
 @test "on with no target fails" {
@@ -124,18 +124,18 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
   [ "$status" -eq 0 ]
   [[ "$output" == *"0.0.0.0 netflix.com"* ]]
   [[ "$output" == *"locked until"* ]]
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
-  [ ! -e "$FOCUSBLOCK_STATE_DIR/until" ]
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
+  [ ! -e "$LOCKIN_STATE_DIR/until" ]
 }
 
 @test "the first change saves a backup of the original file" {
   "$FB" on netflix
-  cmp "$FOCUSBLOCK_STATE_DIR/hosts.backup" "$TMP/hosts.orig"
+  cmp "$LOCKIN_STATE_DIR/hosts.backup" "$TMP/hosts.orig"
 }
 
 @test "a read-only hosts file gives a sudo hint" {
   [ "$(id -u)" -ne 0 ] || skip "root can write read-only files"
-  chmod 444 "$FOCUSBLOCK_HOSTS"
+  chmod 444 "$LOCKIN_HOSTS"
   run "$FB" on netflix
   [ "$status" -eq 1 ]
   [[ "$output" == *"sudo"* ]]
@@ -151,12 +151,12 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
 
 @test "--for parses combined durations" {
   "$FB" on netflix --for 1h30m
-  [ "$(cat "$FOCUSBLOCK_STATE_DIR/until")" -eq $((1000000000 + 5400)) ]
+  [ "$(cat "$LOCKIN_STATE_DIR/until")" -eq $((1000000000 + 5400)) ]
 }
 
 @test "--for=VALUE form works" {
   "$FB" on netflix --for=2d
-  [ "$(cat "$FOCUSBLOCK_STATE_DIR/until")" -eq $((1000000000 + 172800)) ]
+  [ "$(cat "$LOCKIN_STATE_DIR/until")" -eq $((1000000000 + 172800)) ]
 }
 
 @test "bad durations are rejected" {
@@ -164,7 +164,7 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
     run "$FB" on netflix --for "$bad"
     [ "$status" -eq 1 ]
   done
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }
 
 @test "off refuses while the timer is running" {
@@ -177,18 +177,18 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
 
 @test "off works once the timer is up" {
   "$FB" on netflix --for 2h
-  FOCUSBLOCK_NOW=$((1000000000 + 7200)) run "$FB" off
+  LOCKIN_NOW=$((1000000000 + 7200)) run "$FB" off
   [ "$status" -eq 0 ]
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }
 
 @test "a timer can be extended but not shortened" {
   "$FB" on netflix --for 2h
   run "$FB" on netflix --for 10m
   [[ "$output" == *"Keeping the later time"* ]]
-  [ "$(cat "$FOCUSBLOCK_STATE_DIR/until")" -eq $((1000000000 + 7200)) ]
+  [ "$(cat "$LOCKIN_STATE_DIR/until")" -eq $((1000000000 + 7200)) ]
   "$FB" on netflix --for 3h
-  [ "$(cat "$FOCUSBLOCK_STATE_DIR/until")" -eq $((1000000000 + 10800)) ]
+  [ "$(cat "$LOCKIN_STATE_DIR/until")" -eq $((1000000000 + 10800)) ]
 }
 
 @test "status shows the time left" {
@@ -199,29 +199,29 @@ count() { grep -c "$1" "$FOCUSBLOCK_HOSTS" || true; }
 
 @test "--for installs a launchd job that runs tick every minute" {
   "$FB" on netflix --for 1h
-  plist="$FOCUSBLOCK_LAUNCHD_DIR/local.focusblock.timer.plist"
+  plist="$LOCKIN_LAUNCHD_DIR/local.lockin.timer.plist"
   [ -f "$plist" ]
   grep -q '<string>tick</string>' "$plist"
   grep -q '<integer>60</integer>' "$plist"
-  [ -x "$FOCUSBLOCK_STATE_DIR/focusblock" ]
+  [ -x "$LOCKIN_STATE_DIR/lockin" ]
 }
 
 @test "tick does nothing before the timer is up" {
   "$FB" on netflix --for 1h
-  FOCUSBLOCK_NOW=$((1000000000 + 3599)) "$FB" tick
+  LOCKIN_NOW=$((1000000000 + 3599)) "$FB" tick
   [ "$(count '^0\.0\.0\.0 netflix\.com$')" -eq 1 ]
 }
 
 @test "tick lifts the block and cleans up once the timer is up" {
   "$FB" on netflix --for 1h
-  FOCUSBLOCK_NOW=$((1000000000 + 3600)) "$FB" tick
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
-  [ ! -e "$FOCUSBLOCK_STATE_DIR/until" ]
-  [ ! -e "$FOCUSBLOCK_LAUNCHD_DIR/local.focusblock.timer.plist" ]
+  LOCKIN_NOW=$((1000000000 + 3600)) "$FB" tick
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
+  [ ! -e "$LOCKIN_STATE_DIR/until" ]
+  [ ! -e "$LOCKIN_LAUNCHD_DIR/local.lockin.timer.plist" ]
 }
 
 @test "the copied tick runner works on its own" {
   "$FB" on netflix --for 1h
-  FOCUSBLOCK_NOW=$((1000000000 + 3600)) "$FOCUSBLOCK_STATE_DIR/focusblock" tick
-  cmp "$FOCUSBLOCK_HOSTS" "$TMP/hosts.orig"
+  LOCKIN_NOW=$((1000000000 + 3600)) "$LOCKIN_STATE_DIR/lockin" tick
+  cmp "$LOCKIN_HOSTS" "$TMP/hosts.orig"
 }

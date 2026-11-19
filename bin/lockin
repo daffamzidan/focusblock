@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# focusblock: block distracting sites on macOS through /etc/hosts,
+# lockin: block distracting sites on macOS through /etc/hosts,
 # optionally with a timer that won't let you unblock early.
 #
 # Written for the bash 3.2 that ships with macOS, so no associative
@@ -11,20 +11,20 @@ set -f  # no globbing: a target like "*" must never expand to file names
 
 VERSION="0.1.0"
 
-HOSTS_FILE="${FOCUSBLOCK_HOSTS:-/etc/hosts}"
-STATE_DIR="${FOCUSBLOCK_STATE_DIR:-/var/db/focusblock}"
-LAUNCHD_DIR="${FOCUSBLOCK_LAUNCHD_DIR:-/Library/LaunchDaemons}"
-LABEL="local.focusblock.timer"
-MARK_START="# FOCUSBLOCK-START"
-MARK_END="# FOCUSBLOCK-END"
+HOSTS_FILE="${LOCKIN_HOSTS:-/etc/hosts}"
+STATE_DIR="${LOCKIN_STATE_DIR:-/var/db/lockin}"
+LAUNCHD_DIR="${LOCKIN_LAUNCHD_DIR:-/Library/LaunchDaemons}"
+LABEL="local.lockin.timer"
+MARK_START="# LOCKIN-START"
+MARK_END="# LOCKIN-END"
 DRY_RUN=0
 
 # ---------------------------------------------------------------- helpers
 
-die()  { printf 'focusblock: %s\n' "$*" >&2; exit 1; }
+die()  { printf 'lockin: %s\n' "$*" >&2; exit 1; }
 info() { printf '%s\n' "$*"; }
 
-now() { printf '%s\n' "${FOCUSBLOCK_NOW:-$(date +%s)}"; }
+now() { printf '%s\n' "${LOCKIN_NOW:-$(date +%s)}"; }
 
 # Epoch -> local time. BSD date (macOS) first, GNU date (Linux CI) second.
 fmt_time() {
@@ -70,15 +70,15 @@ self_dir() {
 self_path() { printf '%s/%s\n' "$(self_dir)" "$(basename "${BASH_SOURCE[0]}")"; }
 
 lists_dir() {
-  if [ -n "${FOCUSBLOCK_LISTS_DIR:-}" ]; then
-    printf '%s\n' "$FOCUSBLOCK_LISTS_DIR"; return
+  if [ -n "${LOCKIN_LISTS_DIR:-}" ]; then
+    printf '%s\n' "$LOCKIN_LISTS_DIR"; return
   fi
   local here d
   here="$(self_dir)"
-  for d in "$here/../lists" "$here/../share/focusblock/lists"; do
+  for d in "$here/../lists" "$here/../share/lockin/lists"; do
     if [ -d "$d" ]; then (cd "$d" && pwd); return; fi
   done
-  die "can't find the site lists; set FOCUSBLOCK_LISTS_DIR"
+  die "can't find the site lists; set LOCKIN_LISTS_DIR"
 }
 
 # Strict hostname check. This is the only thing standing between user input
@@ -104,7 +104,7 @@ domains_for() {
     case "$target" in www.*) ;; *) printf 'www.%s\n' "$target" ;; esac
     return
   fi
-  die "unknown site or list: '$target' (see: focusblock lists)"
+  die "unknown site or list: '$target' (see: lockin lists)"
 }
 
 # Comma-joined, de-duplicated, order kept.
@@ -134,7 +134,7 @@ hosts_without_block() {
 render_block() {
   local targets="$1" t d
   printf '\n%s targets=%s\n' "$MARK_START" "$targets"
-  printf '# Added by focusblock. Remove with: sudo focusblock off\n'
+  printf '# Added by lockin. Remove with: sudo lockin off\n'
   {
     for t in $(printf '%s' "$targets" | tr ',' ' '); do domains_for "$t"; done
   } | awk '!seen[$0]++' | while IFS= read -r d; do
@@ -160,7 +160,7 @@ backup_once() {
 }
 
 flush_dns() {
-  [ "${FOCUSBLOCK_NO_FLUSH:-0}" = 1 ] && return 0
+  [ "${LOCKIN_NO_FLUSH:-0}" = 1 ] && return 0
   [ "$(uname -s)" = Darwin ] || return 0
   dscacheutil -flushcache 2>/dev/null || true
   killall -HUP mDNSResponder 2>/dev/null || true
@@ -176,11 +176,11 @@ is_locked() { [ "$(lock_until)" -gt "$(now)" ]; }
 
 plist_path() { printf '%s/%s.plist\n' "$LAUNCHD_DIR" "$LABEL"; }
 
-# A launchd daemon runs "focusblock tick" every minute and at boot. The
+# A launchd daemon runs "lockin tick" every minute and at boot. The
 # script is copied into the root-owned state dir first: launchd can't run it
 # from ~/Downloads (macOS privacy rules), and it keeps working if the repo moves.
 install_timer() {
-  local runner="$STATE_DIR/focusblock" plist
+  local runner="$STATE_DIR/lockin" plist
   plist="$(plist_path)"
   cp "$(self_path)" "$runner"
   chmod 755 "$runner"
@@ -205,17 +205,17 @@ install_timer() {
 </plist>
 EOF
   chmod 644 "$plist"
-  [ "${FOCUSBLOCK_NO_LAUNCHD:-0}" = 1 ] && return 0
+  [ "${LOCKIN_NO_LAUNCHD:-0}" = 1 ] && return 0
   launchctl bootout "system/$LABEL" 2>/dev/null || true
   launchctl bootstrap system "$plist"
 }
 
 remove_timer() {
   rm -f "$STATE_DIR/until"
-  if [ "${FOCUSBLOCK_NO_LAUNCHD:-0}" != 1 ]; then
+  if [ "${LOCKIN_NO_LAUNCHD:-0}" != 1 ]; then
     launchctl bootout "system/$LABEL" 2>/dev/null || true
   fi
-  rm -f "$(plist_path)" "$STATE_DIR/focusblock"
+  rm -f "$(plist_path)" "$STATE_DIR/lockin"
 }
 
 unblock() {
@@ -239,7 +239,7 @@ cmd_on() {
       *)       targets="$targets $1"; shift ;;
     esac
   done
-  [ -n "${targets// /}" ] || die "what should I block? e.g. focusblock on netflix"
+  [ -n "${targets// /}" ] || die "what should I block? e.g. lockin on netflix"
 
   # Lower-case list names; raw domains are case-insensitive anyway.
   targets="$(printf '%s' "$targets" | tr '[:upper:]' '[:lower:]')"
@@ -304,7 +304,7 @@ cmd_status() {
   if is_locked; then
     info "Locked until $(fmt_time "$(lock_until)") ($(fmt_left $(($(lock_until) - $(now)))) left)"
   else
-    info "No timer: 'sudo focusblock off' removes it."
+    info "No timer: 'sudo lockin off' removes it."
   fi
 }
 
@@ -319,7 +319,7 @@ cmd_tick() {
 cmd_lists() {
   local dir f name n
   dir="$(lists_dir)"
-  info "Built-in lists (you can also pass any domain, e.g. focusblock on example.com):"
+  info "Built-in lists (you can also pass any domain, e.g. lockin on example.com):"
   set +f
   for f in "$dir"/*.txt; do
     name="$(basename "$f" .txt)"
@@ -330,18 +330,18 @@ cmd_lists() {
 
 usage() {
   cat <<'EOF'
-focusblock: build your focus by keeping distracting sites closed for a work session.
+lockin: build your focus by keeping distracting sites closed for a work session.
 
 Usage:
-  sudo focusblock on <site|list>... [--for DURATION]
-  sudo focusblock off
-  focusblock status
-  focusblock lists
+  sudo lockin on <site|list>... [--for DURATION]
+  sudo lockin off
+  lockin status
+  lockin lists
 
 Examples:
-  sudo focusblock on netflix                 block Netflix until you turn it off
-  sudo focusblock on netflix youtube --for 2h   block both; 'off' refuses for 2 hours
-  sudo focusblock on example.com             block any domain (www. is added for you)
+  sudo lockin on netflix                 block Netflix until you turn it off
+  sudo lockin on netflix youtube --for 2h   block both; 'off' refuses for 2 hours
+  sudo lockin on example.com             block any domain (www. is added for you)
 
 Options:
   --for DURATION   lock the block for 45m, 2h, 1h30m, 1d... it lifts itself when time is up
@@ -369,7 +369,7 @@ main() {
     lists)          cmd_lists ;;
     tick)           cmd_tick ;;
     -h|--help|help) usage ;;
-    -v|--version)   info "focusblock $VERSION" ;;
+    -v|--version)   info "lockin $VERSION" ;;
     *)              usage >&2; exit 1 ;;
   esac
 }

@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: ShellCheck
-        run: shellcheck bin/focusblock
+        run: shellcheck bin/lockin
 
   test:
     strategy:

@@ -1,20 +1,20 @@
 PREFIX ?= /usr/local
 BINDIR  = $(DESTDIR)$(PREFIX)/bin
-LISTDIR = $(DESTDIR)$(PREFIX)/share/focusblock/lists
+LISTDIR = $(DESTDIR)$(PREFIX)/share/lockin/lists
 
 .PHONY: install uninstall test lint
 
 install:
 	install -d $(BINDIR) $(LISTDIR)
-	install -m 755 bin/focusblock $(BINDIR)/focusblock
+	install -m 755 bin/lockin $(BINDIR)/lockin
 	install -m 644 lists/*.txt $(LISTDIR)/
 
 uninstall:
-	rm -f $(BINDIR)/focusblock
-	rm -rf $(DESTDIR)$(PREFIX)/share/focusblock
+	rm -f $(BINDIR)/lockin
+	rm -rf $(DESTDIR)$(PREFIX)/share/lockin
 
 test:
 	bats test
 
 lint:
-	shellcheck bin/focusblock
+	shellcheck bin/lockin
